@@ -1,14 +1,15 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
+.ipynb_checkpoints
 *.py[cod]
 *$py.class
-
+*.ipynb
 # C extensions
 *.so
 
 # Distribution / packaging
 .Python
-build/
+#build/
 develop-eggs/
 dist/
 downloads/
@@ -50,7 +51,8 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
-
+data/*
+logs/*
 # Translations
 *.mo
 *.pot

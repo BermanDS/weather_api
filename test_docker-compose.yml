@@ -1,0 +1,18 @@
+version: "2.1"
+
+services:
+  
+  reatapi:
+    image: weather_restapi
+    container_name: weather_restapi
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - $DIR__DATA:/data
+      - $DIR__LOGS:/logs
+    ports:
+      - "$APP__PORT:$APP__PORT"
+    command: "pytest test"

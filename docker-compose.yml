@@ -1,0 +1,78 @@
+version: "2.1"
+
+services:
+  database:
+    container_name: postgres_container
+    image: postgres:13.3
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: $PG__USER
+      POSTGRES_PASSWORD: $PG__PASSW
+      PGDATA: "/var/lib/postgresql/data"
+    volumes:
+      - ./init_db:/docker-entrypoint-initdb.d
+      - ./init_db/postgresql.conf:/etc/postgresql/postgresql.conf
+      - $PG__DATA:/var/lib/postgresql/data
+      - $PG__LOGS:/var/lib/postgresql/logs
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    ports:
+      - "$PG__PORT:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+  
+  pgadmin:
+    container_name: pgadmin_container
+    image: dpage/pgadmin4:5.7
+    env_file:
+      - .env
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "${PGADMIN__EMAIL}"
+      PGADMIN_DEFAULT_PASSWORD: "${PGADMIN__PASSWD}"
+      PGADMIN_CONFIG_SERVER_MODE: "${PGADMIN__SERVER_MODE}"
+    volumes:
+      - $PGADMIN__DATA:/var/lib/pgadmin
+    ports:
+      - "$PGADMIN__PORT:80"
+    restart: unless-stopped
+ 
+  backend_restapi:
+    image: weather_backend
+    build: 
+      context: .
+      dockerfile: Dockerfile_backend
+    env_file:
+      - .env
+    depends_on:
+      database:
+        condition: service_healthy
+    links:
+      - database
+    volumes:
+      - $DIR__DATA:/data
+      - $DIR__LOGS:/logs
+    ports:
+      - "$API__EXT_PORT:$API__EXT_PORT"
+      - "$API__EXT_FLOWER_PORT:$API__EXT_FLOWER_PORT"
+  
+  frontend_restapi:
+    image: weather_restapi
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      database:
+        condition: service_healthy
+    links:
+      - database
+    volumes:
+      - $DIR__DATA:/data
+      - $DIR__LOGS:/logs
+    ports:
+      - "$APP__PORT:80"

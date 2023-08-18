@@ -1,0 +1,27 @@
+FROM python:3.8
+
+WORKDIR /app
+
+#install supervisord
+RUN apt-get update && apt-get install -y supervisor
+RUN apt-get install -y redis-server
+
+# copy requirements and install (so that changes to files do not mean rebuild cannot be cached)
+## pyrthon env
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN pip install --upgrade pip
+COPY build/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY src/weather_process.py /app/src/
+COPY src/settings.py /app/src/
+COPY src/utils.py /app/src/
+COPY src/backend.py /app/app.py
+COPY build/run_backendapi.conf /app/supervisord.conf
+
+# needs to be set else Celery gives an error (because docker runs commands inside container as root)
+ENV C_FORCE_ROOT=1
+
+# run supervisord
+CMD ["/usr/bin/supervisord"]
